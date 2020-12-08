@@ -8,6 +8,7 @@ const teacher = require('./routes/teacher/index')
 const student = require('./routes/student/index')
 const admin = require('./routes/admin/index')
 const publi = require('./routes/public/index')
+const email = require('./routes/email/index')
 
 // 配置body-parser
 // 配置完成后，在req请求对象上会多出一个属性：body
@@ -35,10 +36,9 @@ app.use(teacher)
 app.use(student)
 app.use(admin)
 app.use(publi)
+app.use(email)
 
 app.use('/uploads', express.static(__dirname + '/uploads'))
-
-
 
 // 上传图片
 const multer = require('multer')
@@ -46,10 +46,8 @@ const upload = multer({ dest: __dirname + '/./uploads' })
 // upload.single('file') 代表单个文件的上传
 app.post('/upload', upload.single('file'), async (req, res) => {
   const file = req.file
-  file.url = `http://127.0.0.1:3000/uploads/${file.filename}`
+  file.url = `https://tianyudong.picp.vip/uploads/${file.filename}`
   res.send(file.url)
 })
-
-
 
 app.listen(port, () => console.log(`Example app listening on port port!http://127.0.0.1:3000`))

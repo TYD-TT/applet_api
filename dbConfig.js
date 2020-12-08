@@ -11,6 +11,8 @@ const pool = mysql.createPool({
 var query = function (sql,sqlArr, callback) {
     pool.getConnection(function (err, conn) {
         if (err) {
+            const date = new Date()
+            console.log(date);
             callback(err, null, null);
         } else {
             conn.query(sql,sqlArr, function (qerr, vals, fields) {
