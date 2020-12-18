@@ -2,48 +2,6 @@ const express = require('express')
 const query = require('../../dbConfig')
 const router = express.Router()
 
-// 根据id删除信息
-router.delete('/del_message?id&table', (req, res) => {
-  console.log(req);
-    const sql = `Delete from wx_student where id = ${req.params.id}`
-    query(sql, (err, data) => {
-      if (err) {
-        return console.log(err);
-      }
-      res.send({ status: 201 })
-    })
-  })
-  
-  // 根据id批量删除数据
-  router.post('/del_messagem', (req, res) => {
-    const sql = ` DELETE  from wx_student where id in (?)`
-    const sqlArr = req.body.join(',')
-    query(sql, sqlArr, (err, data) => {
-      if (err) {
-        return console.log(err);
-      }
-      res.send({ status: 201 })
-    })
-  })
-  
-  // 搜索
-  router.post('/search', (req, res) => {
-    const sql = `SELECT * from wx_student  WHERE ${req.body.index} LIKE ?`
-    const value = "%" + req.body.value + "%"
-    const sqlArr = [value]
-    query(sql, sqlArr, (err, vals, fields) => {
-      if (err) {
-        return res.send(err)
-      }
-      const row = JSON.stringify(vals)
-      res.send({
-        message: row,
-        status: 201
-      })
-    })
-  })
-
-
   // 学生/教师登录
 router.post('/login', (req, res) => {
   const user = req.query.user
@@ -146,5 +104,127 @@ router.put('/update_message/:id', (req, res) => {
   }
 })
 
+// --------------------------------------------------上传文章--------------------------
+// 上传文章
+router.post('/upload/content',(req,res)=>{
+  const sql =  `
+  INSERT INTO content ( id, title, content, imgUrl)
+  VALUES ( 0, ?, ?, ?)
+  `
+  const sqlArr = [req.body.title,req.body.content,req.body.avatar]
+  query(sql,sqlArr,(err,vals)=>{
+    if (err) {
+      return res.send({
+        status:402,
+        message:'上传失败',
+        data:err
+      })
+    }
+    res.send({
+      status:201,
+      message:'上传成功'
+    })
+  })
+})
 
-  module.exports = router
+// 查询最新的三条文章文章
+router.get('/select/contents',(req,res)=>{
+  const sql = `
+  SELECT * FROM content  ORDER BY creat_time DESC LIMIT 3
+  `
+  query(sql,(err,vals)=>{
+    if (err) {
+      return res.send({
+        status:402,
+        message:'查询失败'
+      })
+    }
+    res.send({
+      status:201,
+      message:'查询成功',
+      data:vals
+    })
+  })
+})
+
+// 根绝id查询一篇文章
+router.get('/select/content/:id',(req,res)=>{
+  console.log(req.params);
+  const sql = `select * from content where  id=?`
+  const sqlArr = [req.params.id]
+  query(sql,sqlArr,(err,vals)=>{
+    if (err) {
+      return res.send({
+        status:402,
+        message:'查询失败'
+      })
+    }
+    res.send({
+      status:201,
+      message:'查询成功',
+      data:vals
+    })
+  })
+})
+
+// --------------------------------------------------意见反馈--------------------------
+router.post('/feedback',(req,res)=>{
+  const arr = req.body
+  const imgURL = arr.imgURL.join('+')
+  const sql = `INSERT INTO feedback (id,text,imgUrl,creat_time)
+      VALUES (0,?,?,?)`
+  const sqlArr = [arr.msg, imgURL, arr.creat_time]
+  query(sql, sqlArr, (err, vals, fields) => {
+      if (err) {
+        console.log(err);
+          return res.send(err)
+      }
+      res.send({
+          message: '提交成功',
+          status: 201
+      })
+  })
+})
+
+router.get('/feedback',(req,res)=>{
+    const sql = `select * from feedback`
+    query(sql,(err,vals)=>{
+      if (err) {
+        return res.send({
+          status:402,
+          data:err,
+          message:'获取失败'
+        })
+      }
+      res.send({
+        status:201,
+        data:vals,
+        message:'查询成功'
+      })
+    })
+})
+
+// 删除一条数据
+router.delete('/feedback/:id', (req, res) => {
+  const sql = `Delete from feedback where id = ${req.params.id}`
+  query(sql, (err, data) => {
+      if (err) {
+          return console.log(err);
+      }
+      res.send({ status: 201, message: '删除成功' })
+  })
+})
+
+// 根据id批量删除数据
+router.post('/feedbacks', (req, res) => {
+  const sql = ` DELETE  from feedback where id in (${req.body.join(',')})`
+  query(sql, (err, data) => {
+      if (err) {
+          return console.log(err);
+      }
+      res.send({ status: 201 })
+  })
+})
+
+
+module.exports = router

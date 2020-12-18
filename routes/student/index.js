@@ -41,14 +41,14 @@ router.get('/student/again', (req, res) => {
     })
   })
 })
-
 // 查询修改密码的信息
 router.get('/student/password', (req, res) => {
   const arr = req.body
   const sql = `select student_password.id, account, name, password,class, major, department, phone,ID_type,ID_number,creat_time,status
     from student,student_password 
-    where student.id = student_password.student_id
-	order by time desc`
+    where  DATE_SUB(CURDATE(), INTERVAL 7 DAY) <= date(student_password.creat_time)
+    AND student.id = student_password.student_id
+	  order by time desc`
   const sqlArr = [arr.account, arr.password_type, arr.section, arr.creat_time]
   query(sql, sqlArr, (err, vals, fields) => {
     if (err) {
@@ -137,8 +137,6 @@ router.post('/student/find_msg', (req, res) => {
   const sql = `select *
       from student 
       WHERE ${req.body.index} LIKE '${"%" + req.body.value + "%"}' `
-  const value = "%" + req.body.value + "%"
-  const sqlArr = [value]
   query(sql, (err, vals) => {
     if (err) {
       console.log(err);
@@ -151,8 +149,6 @@ router.post('/student/find_msg', (req, res) => {
     })
   })
 })
-
-
 
 // 查询申请当天学生的状态
 router.get('/student/stu_pwd_sum', (req, res) => {
@@ -227,8 +223,10 @@ router.post('/student/edit_status1', (req, res) => {
 // 查询一周内的学生修改量
 router.get('/student/edit_sum', (req, res) => {
   const sql = `
-  SELECT * FROM student_password 
-  WHERE YEARWEEK(date_format(creat_time,'%Y-%m-%d'),1) = YEARWEEK(now(),1);`
+  SELECT creat_time, COUNT(*) 
+  FROM  student_password 
+  WHERE DATE_SUB(CURDATE(), INTERVAL 7 DAY) < date(creat_time)   
+  GROUP BY creat_time;`
   query(sql, (err, vals) => {
     if (err) {
       return res.send({
@@ -243,5 +241,60 @@ router.get('/student/edit_sum', (req, res) => {
     })
   })
 })
+
+// 一键修改
+router.put('/student/pwd_alter',(req,res)=>{
+  const sql = `UPDATE student_password SET status='1'`
+  query(sql,(err,vals)=>{
+    if (err) {
+      return res.send({
+        status:402,
+        message:'修改失败',
+      })
+    }
+    res.send({
+      status:201,
+      message:'修改完成',
+    })
+  })
+})
+
+// -----------------------------------------查询申请任务---------------------------------------------
+router.get('/student/steps', (req, res) => {
+  console.log(req);
+  const sql = `select name, account,student_password.id,student_password.creat_time 
+  from student_password,student
+  where student_id =student.id 
+  AND  account=? 
+  order by time desc`
+  const sqlArr = [req.query.account]
+  query(sql, sqlArr, (err, vals) => {
+      if (err) {
+          console.log(err);
+          return res.send(err)
+      }
+      res.send({
+          status: 201,
+          data: vals
+      })
+  })
+})
+
+// -----------------------------------------查看申请进度---------------------------------------------
+router.post('/student/step', (req, res) => {
+  const sql = `select * from student_password where id=?`
+  const sqlArr = [req.body.id]
+  query(sql, sqlArr, (err, vals) => {
+      if (err) {
+          console.log(err);
+          return res.send(err)
+      }
+      res.send({
+          status: 201,
+          data: vals
+      })
+  })
+})
+
 
 module.exports = router

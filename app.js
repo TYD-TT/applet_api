@@ -46,8 +46,12 @@ const upload = multer({ dest: __dirname + '/./uploads' })
 // upload.single('file') 代表单个文件的上传
 app.post('/upload', upload.single('file'), async (req, res) => {
   const file = req.file
-  file.url = `https://tianyudong.picp.vip/uploads/${file.filename}`
-  res.send(file.url)
+  file.url = `http://127.0.0.1:3000/uploads/${file.filename}`
+  res.send({
+    status:201,
+    data:file.url
+  })
 })
+
 
 app.listen(port, () => console.log(`Example app listening on port port!http://127.0.0.1:3000`))

@@ -138,7 +138,7 @@ router.post('/teacher/password', teaMiddleWare(), (req, res) => {
 
 // 查询修改密码的信息
 router.get('/teacher/password', (req, res) => {
-    const sql = `select tea_password.id, name,phone,ID_type,ID_number,department, tea_password.account,password_type,section,tea_password.creat_time 
+    const sql = `select tea_password.id, name,phone,ID_type,ID_number,department, tea_password.account,password_type,section,tea_password.creat_time,tea_password.status 
                 from teacher, tea_password
                 where teacher.account=tea_password.account 
                 order by tea_password.time desc`
@@ -227,7 +227,7 @@ router.post('/teacher/software', teaMiddleWare(), (req, res) => {
 router.get('/teacher/software', (req, res) => {
     const arr = req.body
     const sql = `select name,ios,office, address, time, tea_software.account, tea_software.phone,section,tea_software.creat_time,
-    text ,tea_software.id
+    text ,tea_software.id,tea_software.status
     from teacher, tea_software
     where teacher.account=tea_software.account
     order by tea_software.time1 desc`
@@ -295,25 +295,25 @@ router.post('/teacher/del_software', (req, res) => {
 })
 
 // 软件正版化评价
-router.post('/teacher/appraise',(req,res)=>{
+router.post('/teacher/appraise', (req, res) => {
     const sql = `
     update tea_software 
     set install_name=?, appraise=?, feedback=?
     where id=${req.body.id}
     `
-    const sqlArr = [req.body.install, req.body.value2,req.body.feedback]
-    query(sql,sqlArr,(err,vals)=>{
+    const sqlArr = [req.body.install, req.body.value2, req.body.feedback]
+    query(sql, sqlArr, (err, vals) => {
         if (err) {
             console.log(err);
             return res.send({
-                status:402,
-                message:'评论失败',
-                data:err
+                status: 402,
+                message: '评论失败',
+                data: err
             })
         }
         res.send({
-            status:201,
-            message:'评论成功'
+            status: 201,
+            message: '评论成功'
         })
 
     })
@@ -574,7 +574,7 @@ router.post('/teacher/fault', teaMiddleWare(), (req, res) => {
 
 // 网络故障报修
 router.get('/teacher/fault', (req, res) => {
-    const sql = `select tea_fault.id, tea_fault.account,tea_fault.phone,fault_type,address,fault_message,section,teacher.name,tea_fault.creat_time,imgURL 
+    const sql = `select tea_fault.id, tea_fault.account,tea_fault.phone,fault_type,address,fault_message,section,teacher.name,tea_fault.creat_time,imgURL,tea_fault.status 
     from teacher,tea_fault
     where teacher.account = tea_fault.account
     order by tea_fault.time desc
@@ -620,7 +620,6 @@ router.post('/teacher/find_fault', (req, res) => {
 
 // 网络故障报修删除一条数据
 router.delete('/teacher/del_fault/:id', (req, res) => {
-    console.log(req);
     const sql = `Delete from tea_fault where id = ${req.params.id}`
     query(sql, (err, data) => {
         if (err) {
@@ -678,27 +677,72 @@ router.post('/teacher/step', (req, res) => {
     })
 })
 
-// -----------------------------------------反馈意见---------------------------------------------
-router.post('/teacher/feedback', (req, res) => {
-    // const arr = req.body
-    console.log(req);
-    // const imgURL = arr.imgURL.join('+')
-    const sql = `INSERT INTO tea_fault (id,account,phone,address,fault_type,fault_message,section,imgURL,creat_time)
-        VALUES (0,?,?,?,?,?,?,?,?)`
-    // const sqlArr = [arr.account, arr.phone, arr.address, arr.fault_type, arr.fault_message, arr.section, imgURL, arr.creat_time]
-    // query(sql, sqlArr, (err, vals, fields) => {
-    //     if (err) {
-    //         return res.send(err)
-    //     }
-    //     res.send({
-    //         message: '提交成功',
-    //         status: 201
-    //     })
-    // })
+// -----------------------------------------VSB网站群技术支持-----------------------------------------
+router.post('/teacher/advisory',(req,res)=>{
+    const arr = req.body
+    const imgURL = arr.imgURL.join('+')
+    const sql = `INSERT INTO tea_advisory (id,account,text,imgURL,creat_time)
+        VALUES (0,?,?,?,?)`
+    const sqlArr = [arr.account, arr.msg, imgURL, arr.creat_time]
+    query(sql, sqlArr, (err, vals, fields) => {
+        if (err) {
+            console.log(err);
+            return res.send(err)
+        }
+        res.send({
+            message: '提交成功',
+            status: 201
+        })
+    })
 })
 
+router.get('/teacher/advisory',(req,res)=>{
+    const sql = `
+    select name, tea_advisory.account, text, tea_advisory.creat_time, imgURL,tea_advisory.id
+    from teacher, tea_advisory
+    where teacher.account=tea_advisory.account
+    `
+    query(sql,(err,vals)=>{
+        if (err) {
+            console.log(err);
+            return res.send({
+                status:402,
+                message:'查询失败',
+                data:err
+            })
+        }
+        res.send({
+            status:201,
+            message:'查询成功',
+            data:vals
+        })
+    })
+})
 
-// -----------------------------------------教师首页数据分析---------------------------------------------
+// 删除一条数据
+router.delete('/teacher/advisory/:id', (req, res) => {
+    const sql = `Delete from tea_advisory where id = ${req.params.id}`
+    query(sql, (err, data) => {
+        if (err) {
+            return console.log(err);
+        }
+        res.send({ status: 201, message: '删除成功' })
+    })
+  })
+  
+  // 根据id批量删除数据
+  router.post('/teacher/advisories', (req, res) => {
+    const sql = ` DELETE  from tea_advisory where id in (${req.body.join(',')})`
+    query(sql, (err, data) => {
+        if (err) {
+            return console.log(err);
+        }
+        res.send({ status: 201 })
+    })
+  })
+  
+
+// -----------------------------------------教师首页数据分析-------------------------------------------
 // 密码修改
 router.get('/teacher/select_pwd', (req, res) => {
     const date = new Date()
@@ -984,6 +1028,35 @@ router.get('/teacher/select_sum', (req, res) => {
             data: vals
         })
     })
+})
+
+// 点击完成改变状态
+router.post('/teacher/edit_status1', (req, res) => {
+    if (req.body.status < 1) {
+        const sql = `
+      update ${req.body.sql_type} 
+      SET status = ${0+req.body.status+1}
+      WHERE id=${req.body.id}`
+        query(sql, (err, vals) => {
+            if (err) {
+                console.log(err);
+                return res.send({
+                    status: 402,
+                    data: err
+                })
+            }
+            res.send({
+                status: 201,
+                message: '已确定'
+            })
+        })
+    }
+    else {
+        return res.send({
+            status: 201,
+            message: '完成修改'
+        })
+    }
 })
 
 module.exports = router
